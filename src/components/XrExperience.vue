@@ -8,7 +8,10 @@
       :color="cube.color"
       :position="cube.position"
     />
+
     <Light v-if="scene" :scene="scene" />
+
+    <GrabbableCube v-if="scene && renderer" :scene="scene" :renderer="renderer" />
   </div>
 </template>
 
@@ -17,18 +20,20 @@ import { markRaw } from 'vue';
 import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
-import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js'; // Correct import for hand tracking
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'; // Load fonts
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'; // For 3D text
-import { database, ref, onValue } from '../firebase'; // Import Firebase configuration
+import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { database, ref, onValue } from '../firebase';
 import CubeComponent from './CubeComponent.vue';
 import Light from './Light.vue';
+import GrabbableCube from './GrabbableCube.vue';
 
 export default {
   name: 'XrExperience',
   components: {
     CubeComponent,
-    Light
+    Light,
+    GrabbableCube
   },
   data() {
     return {
@@ -72,7 +77,7 @@ export default {
         if (supported) {
           document.body.appendChild(
             ARButton.createButton(this.renderer, {
-              optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'], // Enable hand tracking
+              optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'],
             })
           );
         } else {
@@ -84,7 +89,7 @@ export default {
     },
 
     setupHandTracking() {
-      const handModelFactory = new XRHandModelFactory(); // Correct use of XRHandModelFactory
+      const handModelFactory = new XRHandModelFactory();
       const hand1 = this.renderer.xr.getHand(0);  // Right hand
       const hand2 = this.renderer.xr.getHand(1);  // Left hand
       this.scene.add(hand1);
@@ -106,7 +111,7 @@ export default {
     // Function to listen for text changes and update the scene
     listenForTextChanges() {
       const loader = new FontLoader();
-      const textRef = ref(database, 'text'); // Firebase reference for text data
+      const textRef = ref(database, 'text');
 
       // Listen for real-time changes to the text node in Firebase
       onValue(textRef, (snapshot) => {
