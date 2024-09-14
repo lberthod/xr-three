@@ -4,7 +4,14 @@ import { getDatabase, ref, onValue } from "firebase/database";
 
 // Configuration Firebase
 const firebaseConfig = {
-xxx
+  apiKey: "AIzaSyC7bOWP6coGpbtEkF6tRUkYPL_3FEo9ie4",
+  authDomain: "ai-ra-chatbot.firebaseapp.com",
+  databaseURL: "https://ai-ra-chatbot-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ai-ra-chatbot",
+  storageBucket: "ai-ra-chatbot.appspot.com",
+  messagingSenderId: "521178102403",
+  appId: "1:521178102403:web:fc5e034278bdf7910c79b6",
+  measurementId: "G-HPWSFNMJVM"
 };
 
 // Initialisation de Firebase
