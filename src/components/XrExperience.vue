@@ -1,6 +1,7 @@
 <template>
   <div ref="canvasContainer" class="canvas-container">
-    <CubeComponent v-if="scene" :scene="scene" :color="cubeColor" />
+    <!-- Passing both color and position to CubeComponent -->
+    <CubeComponent v-if="scene" :scene="scene" :color="cubeColor" :position="cubePosition" />
     <Light v-if="scene" :scene="scene" />
   </div>
 </template>
@@ -13,7 +14,7 @@ import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
 import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
 import { database, ref, onValue } from '../firebase'; // Import Firebase
 
-// Importation des sous-composants
+// Import Cube and Light components
 import CubeComponent from './CubeComponent.vue';
 import Light from './Light.vue';
 
@@ -28,43 +29,44 @@ export default {
       scene: null,
       renderer: null,
       camera: null,
-      cubeColor: '#00ff00' // Couleur par défaut du cube
+      cubeColor: '#00ff00', // Default cube color
+      cubePosition: { x: 0, y: 1.5, z: -2 } // Default cube position
     };
   },
   mounted() {
     this.initScene();
-    this.listenForCubeColorChange();
+    this.listenForCubeDataChange(); // Listen for both color and position changes
   },
   methods: {
     initScene() {
-      // Marquer la scène comme non réactive
+      // Mark the scene as non-reactive
       this.scene = markRaw(new THREE.Scene());
       this.camera = markRaw(new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000));
       this.camera.position.set(0, 1.6, 3);
 
-      // Marquer le renderer comme non réactif
+      // Mark the renderer as non-reactive
       this.renderer = markRaw(new THREE.WebGLRenderer({ antialias: true, alpha: true }));
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.xr.enabled = true;
       this.renderer.shadowMap.enabled = true;
       this.$refs.canvasContainer.appendChild(this.renderer.domElement);
 
-      // Ajout du hand tracking
+      // Add hand tracking
       this.setupHandTracking();
 
-      // Fonction d'animation
+      // Animation function
       const animate = () => {
         this.renderer.setAnimationLoop(() => {
           this.renderer.render(this.scene, this.camera);
         });
       };
 
-      // Détection dynamique pour AR/VR
+      // Detect for AR/VR support dynamically
       navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
           document.body.appendChild(
             ARButton.createButton(this.renderer, {
-              optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'], // Activation du hand tracking
+              optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'], // Enable hand tracking
             })
           );
         } else {
@@ -77,8 +79,8 @@ export default {
 
     setupHandTracking() {
       const handModelFactory = new XRHandModelFactory();
-      const hand1 = this.renderer.xr.getHand(0);  // Main droite
-      const hand2 = this.renderer.xr.getHand(1);  // Main gauche
+      const hand1 = this.renderer.xr.getHand(0);  // Right hand
+      const hand2 = this.renderer.xr.getHand(1);  // Left hand
       this.scene.add(hand1);
       this.scene.add(hand2);
       const handModel1 = handModelFactory.createHandModel(hand1);
@@ -87,12 +89,25 @@ export default {
       hand2.add(handModel2);
     },
 
-    listenForCubeColorChange() {
-      const cubeColorRef = ref(database, 'cube/color'); // Référence à la couleur du cube dans Firebase
-      onValue(cubeColorRef, (snapshot) => {
-        const color = snapshot.val();
-        if (color) {
-          this.cubeColor = color; // Mettre à jour la couleur du cube
+    listenForCubeDataChange() {
+      // Firebase reference to listen for cube color and position
+      const cubeRef = ref(database, 'cube');
+      onValue(cubeRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          // Update the cube's color
+          if (data.color) {
+            this.cubeColor = data.color;
+          }
+
+          // Update the cube's position
+          if (data.position) {
+            this.cubePosition = {
+              x: data.position.x || 0,
+              y: data.position.y || 1.5,
+              z: data.position.z || -2
+            };
+          }
         }
       });
     }

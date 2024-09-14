@@ -1,36 +1,63 @@
 <template>
     <div class="admin-container">
-      <h1>Admin - Change Cube Color</h1>
-      <form @submit.prevent="updateCubeColor">
+      <h1>Admin - Change Cube Position and Color</h1>
+      <form @submit.prevent="updateCubeData">
+        <!-- Color input -->
         <label for="color">Cube Color (Hex): </label>
         <input type="text" v-model="color" placeholder="#00ff00" />
-        <button type="submit">Update Color</button>
+        
+        <!-- Position inputs -->
+        <div>
+          <label for="positionX">Position X: </label>
+          <input type="number" v-model="positionX" />
+        </div>
+        <div>
+          <label for="positionY">Position Y: </label>
+          <input type="number" v-model="positionY" />
+        </div>
+        <div>
+          <label for="positionZ">Position Z: </label>
+          <input type="number" v-model="positionZ" />
+        </div>
+  
+        <button type="submit">Update Cube Data</button>
       </form>
     </div>
   </template>
   
   <script>
-  import { ref as dbRef, set } from 'firebase/database'; // Importation des fonctions Firebase
-  import { database } from '../firebase'; // Importation de la configuration Firebase
+  import { ref as dbRef, set } from 'firebase/database'; 
+  import { database } from '../firebase';
   
   export default {
     name: 'AdminComponent',
     data() {
       return {
-        color: '#00ff00' // Couleur par défaut
+        color: '#00ff00', // Default color
+        positionX: 0, // Default X position
+        positionY: 1.5, // Default Y position
+        positionZ: -2 // Default Z position
       };
     },
     methods: {
-      updateCubeColor() {
-        // Référence à la couleur du cube dans Firebase
-        const cubeColorRef = dbRef(database, 'cube/color');
-        // Mettre à jour la couleur dans la base de données
-        set(cubeColorRef, this.color)
+      updateCubeData() {
+        // Reference to the cube data in Firebase
+        const cubeRef = dbRef(database, 'cube');
+        
+        // Update the color and position in Firebase
+        set(cubeRef, {
+          color: this.color,
+          position: {
+            x: this.positionX,
+            y: this.positionY,
+            z: this.positionZ
+          }
+        })
           .then(() => {
-            alert('Couleur du cube mise à jour avec succès !');
+            alert('Cube data updated successfully!');
           })
           .catch((error) => {
-            alert('Erreur lors de la mise à jour de la couleur : ' + error);
+            alert('Error updating cube data: ' + error);
           });
       }
     }

@@ -1,40 +1,55 @@
 <template>
-  <!-- Le cube sera ajouté dans la scène via ce sous-composant -->
-</template>
-
-<script>
-import * as THREE from 'three';
-
-export default {
-  name: 'CubeComponent',
-  props: ['scene', 'color'],
-  mounted() {
-    this.addCube();
-  },
-  watch: {
-    color(newColor) {
-      this.updateCubeColor(newColor); // Mettre à jour la couleur du cube si la prop change
-    }
-  },
-  methods: {
-    addCube() {
-      const geometry = new THREE.BoxGeometry();
-      this.material = new THREE.MeshStandardMaterial({ color: this.color });
-      this.cube = new THREE.Mesh(geometry, this.material);
-      this.cube.castShadow = true;
-      this.cube.receiveShadow = true;
-      this.cube.position.set(0, 1.5, -2); // Position initiale du cube
-      this.scene.add(this.cube);
+    <!-- The cube will be added to the scene via this sub-component -->
+  </template>
+  
+  <script>
+  import * as THREE from 'three';
+  
+  export default {
+    name: 'CubeComponent',
+    props: ['scene', 'color', 'position'],
+    mounted() {
+      this.addCube();
     },
-    updateCubeColor(newColor) {
-      if (this.cube) {
-        this.cube.material.color.set(newColor); // Mise à jour de la couleur du matériau
+    watch: {
+      color(newColor) {
+        this.updateCubeColor(newColor); // Update cube color when the prop changes
+      },
+      position: {
+        handler(newPosition) {
+          this.updateCubePosition(newPosition); // Update position when the prop changes
+        },
+        deep: true
+      }
+    },
+    methods: {
+      addCube() {
+        const geometry = new THREE.BoxGeometry();
+        this.material = new THREE.MeshStandardMaterial({ color: this.color });
+        this.cube = new THREE.Mesh(geometry, this.material);
+        this.cube.castShadow = true;
+        this.cube.receiveShadow = true;
+  
+        // Set the initial position
+        this.updateCubePosition(this.position);
+        this.scene.add(this.cube);
+      },
+      updateCubeColor(newColor) {
+        if (this.cube) {
+          this.cube.material.color.set(newColor); // Update the color of the material
+        }
+      },
+      updateCubePosition(newPosition) {
+        if (this.cube) {
+          // Update the position of the cube
+          this.cube.position.set(newPosition.x, newPosition.y, newPosition.z);
+        }
       }
     }
-  }
-};
-</script>
-
-<style scoped>
-/* Styles spécifiques au cube si nécessaire */
-</style>
+  };
+  </script>
+  
+  <style scoped>
+  /* Cube specific styles if needed */
+  </style>
+  
