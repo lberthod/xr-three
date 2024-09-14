@@ -31,6 +31,38 @@
 
     <!-- Button to add a new cube -->
     <button @click="addNewCube">Add New Cube</button>
+
+    <!-- Form to edit the text information -->
+    <div class="text-editor">
+      <h2>Edit Text Information</h2>
+      <form @submit.prevent="updateTextData">
+        <!-- Text content -->
+        <label for="content">Text Content: </label>
+        <input type="text" v-model="text.content" placeholder="Enter text" />
+
+        <!-- Position inputs -->
+        <label for="positionX">Position X: </label>
+        <input type="number" v-model="text.position.x" />
+        <label for="positionY">Position Y: </label>
+        <input type="number" v-model="text.position.y" />
+        <label for="positionZ">Position Z: </label>
+        <input type="number" v-model="text.position.z" />
+
+        <!-- Rotation inputs -->
+        <label for="rotationX">Rotation X: </label>
+        <input type="number" v-model="text.rotation.x" />
+        <label for="rotationY">Rotation Y: </label>
+        <input type="number" v-model="text.rotation.y" />
+        <label for="rotationZ">Rotation Z: </label>
+        <input type="number" v-model="text.rotation.z" />
+
+        <!-- Size input -->
+        <label for="size">Text Size: </label>
+        <input type="number" v-model="text.size" />
+
+        <button type="submit">Update Text</button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -42,11 +74,26 @@ export default {
   name: 'AdminComponent',
   data() {
     return {
-      cubes: {} // Object to store all cubes from Firebase
+      cubes: {}, // Object to store all cubes from Firebase
+      text: {
+        content: '', // The actual text to display
+        position: {
+          x: 0,
+          y: 1.5,
+          z: -2
+        },
+        rotation: {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        size: 1 // Size of the text
+      }
     };
   },
   mounted() {
     this.listenForCubeChanges(); // Load cubes on mount
+    this.loadTextData(); // Load text data on mount
   },
   methods: {
     // Listen for changes in the cubes collection in Firebase
@@ -56,6 +103,18 @@ export default {
         this.cubes = snapshot.val() || {}; // Load all cubes into the component
       });
     },
+
+    // Load text data from Firebase
+    loadTextData() {
+      const textRef = dbRef(database, 'text');
+      onValue(textRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          this.text = data;
+        }
+      });
+    },
+
     // Update cube data in Firebase
     updateCubeData(cubeId) {
       const cubeRef = dbRef(database, `cubes/${cubeId}`);
@@ -67,6 +126,7 @@ export default {
           alert('Error updating cube: ' + error);
         });
     },
+
     // Add a new cube to Firebase with default values
     addNewCube() {
       const cubesRef = dbRef(database, 'cubes');
@@ -90,6 +150,18 @@ export default {
         .catch((error) => {
           alert('Error adding new cube: ' + error);
         });
+    },
+
+    // Update the text data in Firebase
+    updateTextData() {
+      const textRef = dbRef(database, 'text');
+      set(textRef, this.text) // Save the text data to Firebase
+        .then(() => {
+          alert('Text updated successfully!');
+        })
+        .catch((error) => {
+          alert('Error updating text: ' + error);
+        });
     }
   }
 };
@@ -100,23 +172,34 @@ export default {
   margin: 50px;
   text-align: center;
 }
+
 ul {
   list-style-type: none;
   padding: 0;
 }
+
 li {
   margin: 20px 0;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
 }
+
 input {
   margin: 5px 10px;
   padding: 5px;
   width: 150px;
 }
+
 button {
   margin-top: 10px;
   padding: 5px 10px;
+}
+
+.text-editor {
+  margin-top: 50px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
 }
 </style>

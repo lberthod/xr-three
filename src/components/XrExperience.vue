@@ -18,6 +18,8 @@ import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
 import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js'; // Correct import for hand tracking
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'; // Load fonts
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'; // For 3D text
 import { database, ref, onValue } from '../firebase'; // Import Firebase configuration
 import CubeComponent from './CubeComponent.vue';
 import Light from './Light.vue';
@@ -33,21 +35,22 @@ export default {
       scene: null,
       renderer: null,
       camera: null,
-      cubes: {} // Store multiple cubes from Firebase
+      cubes: {}, // Store multiple cubes from Firebase
+      textMesh: null // Store the 3D text mesh so we can update it in real-time
     };
   },
   mounted() {
     this.initScene();
     this.listenForCubeChanges(); // Listen for changes in multiple cubes
+    this.listenForTextChanges(); // Listen for real-time text changes
   },
   methods: {
     initScene() {
-      // Mark the scene as non-reactive
+      // Mark the scene, camera, and renderer as non-reactive
       this.scene = markRaw(new THREE.Scene());
       this.camera = markRaw(new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000));
       this.camera.position.set(0, 1.6, 3);
 
-      // Mark the renderer as non-reactive
       this.renderer = markRaw(new THREE.WebGLRenderer({ antialias: true, alpha: true }));
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.xr.enabled = true;
@@ -98,7 +101,49 @@ export default {
       onValue(cubesRef, (snapshot) => {
         this.cubes = snapshot.val() || {}; // Load all cubes into the component
       });
-    }
+    },
+
+    // Function to listen for text changes and update the scene
+    listenForTextChanges() {
+      const loader = new FontLoader();
+      const textRef = ref(database, 'text'); // Firebase reference for text data
+
+      // Listen for real-time changes to the text node in Firebase
+      onValue(textRef, (snapshot) => {
+        const textData = snapshot.val();
+        if (textData) {
+          // If text mesh already exists, remove it before updating
+          if (this.textMesh) {
+            this.scene.remove(this.textMesh);
+          }
+
+          // Load font and create the new 3D text with the updated data
+          loader.load('fonts/helvetiker_regular.typeface.json', (font) => {
+            const textGeometry = new TextGeometry(textData.content || 'Bonjour...', {
+              font: font,
+              size: textData.size || 1, // Use size from Firebase or default
+              height: 0.2,
+              curveSegments: 12,
+            });
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+            // Mark the text mesh as non-reactive to prevent Vue from proxying it
+            this.textMesh = markRaw(new THREE.Mesh(textGeometry, material));
+
+            // Set position, rotation, and size based on the data from Firebase
+            this.textMesh.position.set(textData.position.x || 0, textData.position.y || 1.5, textData.position.z || -2);
+            this.textMesh.rotation.set(
+              THREE.MathUtils.degToRad(textData.rotation.x || 0),
+              THREE.MathUtils.degToRad(textData.rotation.y || 0),
+              THREE.MathUtils.degToRad(textData.rotation.z || 0)
+            );
+
+            // Add the updated text to the scene
+            this.scene.add(this.textMesh);
+          });
+        }
+      });
+    },
   }
 };
 </script>
