@@ -1,7 +1,13 @@
 <template>
   <div ref="canvasContainer" class="canvas-container">
-    <!-- Passing both color and position to CubeComponent -->
-    <CubeComponent v-if="scene" :scene="scene" :color="cubeColor" :position="cubePosition" />
+    <!-- Loop through all cubes and render each one -->
+    <CubeComponent
+      v-for="(cube, id) in cubes"
+      :key="id"
+      :scene="scene"
+      :color="cube.color"
+      :position="cube.position"
+    />
     <Light v-if="scene" :scene="scene" />
   </div>
 </template>
@@ -11,10 +17,8 @@ import { markRaw } from 'vue';
 import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
-import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
-import { database, ref, onValue } from '../firebase'; // Import Firebase
-
-// Import Cube and Light components
+import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js'; // Correct import for hand tracking
+import { database, ref, onValue } from '../firebase'; // Import Firebase configuration
 import CubeComponent from './CubeComponent.vue';
 import Light from './Light.vue';
 
@@ -29,13 +33,12 @@ export default {
       scene: null,
       renderer: null,
       camera: null,
-      cubeColor: '#00ff00', // Default cube color
-      cubePosition: { x: 0, y: 1.5, z: -2 } // Default cube position
+      cubes: {} // Store multiple cubes from Firebase
     };
   },
   mounted() {
     this.initScene();
-    this.listenForCubeDataChange(); // Listen for both color and position changes
+    this.listenForCubeChanges(); // Listen for changes in multiple cubes
   },
   methods: {
     initScene() {
@@ -78,7 +81,7 @@ export default {
     },
 
     setupHandTracking() {
-      const handModelFactory = new XRHandModelFactory();
+      const handModelFactory = new XRHandModelFactory(); // Correct use of XRHandModelFactory
       const hand1 = this.renderer.xr.getHand(0);  // Right hand
       const hand2 = this.renderer.xr.getHand(1);  // Left hand
       this.scene.add(hand1);
@@ -89,26 +92,11 @@ export default {
       hand2.add(handModel2);
     },
 
-    listenForCubeDataChange() {
-      // Firebase reference to listen for cube color and position
-      const cubeRef = ref(database, 'cube');
-      onValue(cubeRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          // Update the cube's color
-          if (data.color) {
-            this.cubeColor = data.color;
-          }
-
-          // Update the cube's position
-          if (data.position) {
-            this.cubePosition = {
-              x: data.position.x || 0,
-              y: data.position.y || 1.5,
-              z: data.position.z || -2
-            };
-          }
-        }
+    listenForCubeChanges() {
+      // Firebase reference to listen for changes in all cubes
+      const cubesRef = ref(database, 'cubes');
+      onValue(cubesRef, (snapshot) => {
+        this.cubes = snapshot.val() || {}; // Load all cubes into the component
       });
     }
   }
