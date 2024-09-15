@@ -1,18 +1,24 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
-import XrExperience from '../components/XrExperience.vue';
-import AdminView from '../views/AdminView.vue'; // Import de la vue Admin
+import XRView from '../views/XRView.vue';
+import AdminView from '../views/AdminView.vue';
+import WebExperience from '../components/WebExperience.vue'; // Import the new MobileExperience component
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: XrExperience
+    component: XRView
   },
   {
     path: '/admin',
     name: 'Admin',
-    component: AdminView // Route pour l'interface d'administration
+    component: AdminView
+  },
+  {
+    path: '/mobile-experience', // New route
+    name: 'MobileExperience',
+    component: WebExperience
   }
 ];
 

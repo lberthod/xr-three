@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "ammo.js": "^0.0.10",
     "firebase": "^10.13.1",
     "three": "^0.168.0",
     "vue": "^3.4.37",

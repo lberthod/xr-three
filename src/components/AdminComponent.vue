@@ -63,12 +63,53 @@
         <button type="submit">Update Text</button>
       </form>
     </div>
+
+    <!-- New section for Grabbable Cube -->
+    <div class="grabbable-cube-editor">
+      <h2>Edit Grabbable Cube</h2>
+      <form @submit.prevent="updateGrabbableCubeData">
+        <!-- Position inputs -->
+        <label for="positionX">Position X: </label>
+        <input type="number" v-model="grabbableCube.position.x" step="0.1" />
+
+        <label for="positionY">Position Y: </label>
+        <input type="number" v-model="grabbableCube.position.y" step="0.1" />
+
+        <label for="positionZ">Position Z: </label>
+        <input type="number" v-model="grabbableCube.position.z" step="0.1" />
+
+        <!-- Rotation inputs -->
+        <label for="rotationX">Rotation X (degrees): </label>
+        <input type="number" v-model="grabbableCube.rotation.x" step="1" />
+
+        <label for="rotationY">Rotation Y (degrees): </label>
+        <input type="number" v-model="grabbableCube.rotation.y" step="1" />
+
+        <label for="rotationZ">Rotation Z (degrees): </label>
+        <input type="number" v-model="grabbableCube.rotation.z" step="1" />
+
+        <!-- Scale inputs -->
+        <label for="scaleX">Scale X: </label>
+        <input type="number" v-model="grabbableCube.scale.x" step="0.1" />
+
+        <label for="scaleY">Scale Y: </label>
+        <input type="number" v-model="grabbableCube.scale.y" step="0.1" />
+
+        <label for="scaleZ">Scale Z: </label>
+        <input type="number" v-model="grabbableCube.scale.z" step="0.1" />
+
+        <!-- Submit Button -->
+        <button type="submit">Update Grabbable Cube</button>
+      </form>
+    </div>
+
   </div>
 </template>
 
 <script>
-import { ref as dbRef, set, onValue, push } from 'firebase/database'; 
+import { ref as dbRef, set, onValue, push, update } from 'firebase/database'; 
 import { database } from '../firebase'; // Import Firebase configuration
+import * as THREE from 'three';
 
 export default {
   name: 'AdminComponent',
@@ -88,12 +129,18 @@ export default {
           z: 0
         },
         size: 1 // Size of the text
-      }
+      },
+      grabbableCube: {
+        position: { x: 0, y: 0.7, z: -1 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
     };
   },
   mounted() {
     this.listenForCubeChanges(); // Load cubes on mount
     this.loadTextData(); // Load text data on mount
+    this.loadGrabbableCubeData(); // Load grabbable cube data on mount
   },
   methods: {
     // Listen for changes in the cubes collection in Firebase
@@ -162,7 +209,60 @@ export default {
         .catch((error) => {
           alert('Error updating text: ' + error);
         });
-    }
+    },
+
+    // Load grabbable cube data from Firebase
+    loadGrabbableCubeData() {
+      const cubeRef = dbRef(database, 'grabbableCubes/cube1'); // Assuming 'cube1' is the cubeId
+
+      onValue(cubeRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          // Convert rotation from radians to degrees for the admin interface
+          this.grabbableCube = {
+            position: data.position,
+            rotation: {
+              x: THREE.MathUtils.radToDeg(data.rotation.x),
+              y: THREE.MathUtils.radToDeg(data.rotation.y),
+              z: THREE.MathUtils.radToDeg(data.rotation.z),
+            },
+            scale: data.scale,
+          };
+        }
+      });
+    },
+
+    // Update grabbable cube data in Firebase
+    updateGrabbableCubeData() {
+      const cubeRef = dbRef(database, 'grabbableCubes/cube1'); // Use the same cubeId as in GrabbableCube.vue
+
+      // Prepare data to save, converting rotation back to radians
+      const cubeData = {
+        position: {
+          x: this.grabbableCube.position.x,
+          y: this.grabbableCube.position.y,
+          z: this.grabbableCube.position.z,
+        },
+        rotation: {
+          x: THREE.MathUtils.degToRad(this.grabbableCube.rotation.x),
+          y: THREE.MathUtils.degToRad(this.grabbableCube.rotation.y),
+          z: THREE.MathUtils.degToRad(this.grabbableCube.rotation.z),
+        },
+        scale: {
+          x: this.grabbableCube.scale.x,
+          y: this.grabbableCube.scale.y,
+          z: this.grabbableCube.scale.z,
+        },
+      };
+
+      update(cubeRef, cubeData)
+        .then(() => {
+          alert('Grabbable cube updated successfully!');
+        })
+        .catch((error) => {
+          alert('Error updating grabbable cube: ' + error);
+        });
+    },
   }
 };
 </script>
@@ -197,6 +297,14 @@ button {
 }
 
 .text-editor {
+  margin-top: 50px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+/* Styles for the grabbable cube editor */
+.grabbable-cube-editor {
   margin-top: 50px;
   padding: 20px;
   border: 1px solid #ccc;
