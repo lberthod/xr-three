@@ -1,20 +1,46 @@
 <template>
   <div ref="canvasContainer" class="canvas-container">
     <!-- Loop through all cubes and render each one -->
-    <CubeComponent
-      v-for="(cube, id) in cubes"
-      :key="id"
-      :scene="scene"
-      :color="cube.color"
-      :position="cube.position"
-    />
+    <CubeComponent v-for="(cube, id) in cubes" :key="id" :scene="scene" :color="cube.color" :position="cube.position" />
 
     <Light v-if="scene" :scene="scene" />
-    <TextComponent v-if="scene" :scene="scene" />
+    <!-- Add four TextComponents for four different strings -->
 
-    <FloorComponent v-if="scene" :scene="scene" :physicsWorld="physicsWorld" />
+    <!-- Afficher le texte seulement si la chaîne n'est pas vide -->
+    <TextComponent
+      v-if="scene && textLines[0]"
+      :scene="scene"
+      :text="textLines[0]"
+      :position="{ x: 0, y: 2.5, z: -2 }"
+      :size="0.251"
+      :color="'#66ff00'"
+    />
+    <TextComponent
+      v-if="scene && textLines[1]"
+      :scene="scene"
+      :text="textLines[1]"
+      :position="{ x: 0, y: 2.0, z: -2 }"
+      :size="0.251"
+      :color="'#00ff00'"
+    />
+    <TextComponent
+      v-if="scene && textLines[2]"
+      :scene="scene"
+      :text="textLines[2]"
+      :position="{ x: 0, y: 1.5, z: -2 }"
+      :size="0.251"
+      :color="'#ff0000'"
+    />
+    <TextComponent
+      v-if="scene && textLines[3]"
+      :scene="scene"
+      :text="textLines[3]"
+      :position="{ x: 0, y: 1.0, z: -2 }"
+      :size="0.251"
+      :color="'#0000ff'"
+    />
     <CubeintoComponent v-if="scene" :scene="scene" :physicsWorld="physicsWorld" />
-    
+
     <GrabbableCube v-if="scene && renderer" :scene="scene" :renderer="renderer" cubeId="cube1" />
 
     <!-- Add SphereComponent here
@@ -57,6 +83,8 @@ export default {
       physicsWorld: null, // Ammo.js physics world
       cubes: {}, // Store multiple cubes from Firebase
       textMesh: null, // Store the 3D text mesh so we can update it in real-time
+      textLines: ['', '', '', ''], // Array to hold the four lines of text
+
     };
   },
   async mounted() {
@@ -65,6 +93,8 @@ export default {
     await this.initAmmoPhysics(); // Initialize Ammo.js physics world
     this.initScene();
     this.listenForCubeChanges(); // Listen for changes in multiple cubes
+    this.loadTextLines(); // Charger les textes au montage du composant
+
   },
   methods: {
     async initAmmoPhysics() {
@@ -116,6 +146,30 @@ export default {
       animate();
     },
 
+    loadTextLines() {
+      // Référence à la base de données Firebase
+      const databaseRefs = [
+        ref(database, 'info/id_10_10'),
+        ref(database, 'info/id_4_4'),
+        ref(database, 'info/id_6_6'),
+        ref(database, 'info/id_8_8'),
+      ];
+
+      // Boucle à travers chaque référence Firebase pour récupérer le texte correspondant
+      databaseRefs.forEach((dbRef, index) => {
+        onValue(dbRef, (snapshot) => {
+          const textData = snapshot.val();
+          if (textData && textData.indice) {
+            // Mettre à jour la ligne correspondante dans textLines avec les données de Firebase
+            console.log(textData);
+            this.textLines[index] = textData.indice;
+          } else {
+            // Si aucune donnée, laisser la ligne vide
+            this.textLines[index] = '';
+          }
+        });
+      });
+    },
     setupHandTracking() {
       const handModelFactory = new XRHandModelFactory();
       const hand1 = this.renderer.xr.getHand(0);  // Right hand

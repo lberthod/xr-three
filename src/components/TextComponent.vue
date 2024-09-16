@@ -1,80 +1,82 @@
 <template>
-    <!-- The component doesn't render any HTML directly -->
-  </template>
-  
-  <script>
-  import { defineComponent, markRaw } from 'vue';
-  import * as THREE from 'three';
-  import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-  import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-  import { database, ref, onValue } from '../firebase';
-  
-  export default defineComponent({
-    name: 'TextComponent',
-    props: {
-      scene: {
-        type: Object,
-        required: true,
-      },
+  <!-- The component doesn't render any HTML directly -->
+</template>
+
+<script>
+import { defineComponent, markRaw } from 'vue';
+import * as THREE from 'three';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+
+export default defineComponent({
+  name: 'TextComponent',
+  props: {
+    scene: {
+      type: Object,
+      required: true,
     },
-    data() {
-      return {
-        textMesh: null,
-      };
+    text: {
+      type: String,
+      default: 'Default text',
     },
-    mounted() {
-      this.listenForTextChanges();
+    position: {
+      type: Object,
+      default: () => ({ x: 0, y: 1.5, z: -2 }),
     },
-    methods: {
-      listenForTextChanges() {
-        const loader = new FontLoader();
-        const textRef = ref(database, 'text');
-  
-        // Listen for real-time changes to the text node in Firebase
-        onValue(textRef, (snapshot) => {
-          const textData = snapshot.val();
-          if (textData) {
-            // If text mesh already exists, remove it before updating
-            if (this.textMesh) {
-              this.scene.remove(this.textMesh);
-            }
-  
-            // Load font and create the new 3D text with the updated data
-            loader.load('fonts/helvetiker_regular.typeface.json', (font) => {
-              const textGeometry = new TextGeometry(textData.content || 'Bonjour...', {
-                font: font,
-                size: textData.size || 1, // Use size from Firebase or default
-                height: 0.2,
-                curveSegments: 12,
-              });
-              const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  
-              // Mark the text mesh as non-reactive to prevent Vue from proxying it
-              this.textMesh = markRaw(new THREE.Mesh(textGeometry, material));
-  
-              // Set position, rotation, and size based on the data from Firebase
-              this.textMesh.position.set(
-                textData.position?.x || 0,
-                textData.position?.y || 1.5,
-                textData.position?.z || -2
-              );
-              this.textMesh.rotation.set(
-                THREE.MathUtils.degToRad(textData.rotation?.x || 0),
-                THREE.MathUtils.degToRad(textData.rotation?.y || 0),
-                THREE.MathUtils.degToRad(textData.rotation?.z || 0)
-              );
-  
-              // Add the updated text to the scene
-              this.scene.add(this.textMesh);
-            });
-          }
+    rotation: {
+      type: Object,
+      default: () => ({ x: 0, y: 0, z: 0 }),
+    },
+    size: {
+      type: Number,
+      default: 1,
+    },
+    color: {
+      type: String,
+      default: '#ffffff',
+    },
+  },
+  data() {
+    return {
+      textMesh: null,
+    };
+  },
+  mounted() {
+    this.createText();
+  },
+  methods: {
+    createText() {
+      const loader = new FontLoader();
+
+      // Load font and create the 3D text
+      loader.load('fonts/helvetiker_regular.typeface.json', (font) => {
+        const textGeometry = new TextGeometry(this.text, {
+          font: font,
+          size: this.size,
+          height: 0.2,
+          curveSegments: 12,
         });
-      },
+        const material = new THREE.MeshBasicMaterial({ color: this.color });
+
+        // Mark the text mesh as non-reactive to prevent Vue from proxying it
+        this.textMesh = markRaw(new THREE.Mesh(textGeometry, material));
+
+        // Set position and rotation based on props
+        this.textMesh.position.set(this.position.x, this.position.y, this.position.z);
+        this.textMesh.rotation.set(
+          THREE.MathUtils.degToRad(this.rotation.x),
+          THREE.MathUtils.degToRad(this.rotation.y),
+          THREE.MathUtils.degToRad(this.rotation.z)
+        );
+
+        // Add the text to the scene
+        this.scene.add(this.textMesh);
+      });
     },
-  });
-  </script>
-  
-  <style scoped>
-  /* No styles needed for this component */
-  </style>
-  
+  },
+});
+</script>
+
+<style scoped>
+/* No styles needed for this component */
+</style>

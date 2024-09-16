@@ -7,7 +7,7 @@
   import { markRaw } from 'vue'; // Import markRaw pour des objets non réactifs
   import Ammo from 'ammo.js'; // Import normal d'Ammo.js
 
-  
+
   export default {
     name: 'FloorComponent',
     props: {
@@ -47,7 +47,7 @@
       addPhysicsToFloor(floor) {
 
         // Si on utilise Ammo.js, ajouter un rigid body statique pour le sol
-        const groundShape = new Ammo.btBoxShape(new Ammo.btVector3(5, 0.1, 5)); // Demi-étendues du sol
+        const groundShape = new Ammo.btBoxShape(new Ammo.btVector3(5, -0.3, 5)); // Demi-étendues du sol
         const transform = new Ammo.btTransform();
         transform.setIdentity();
         transform.setOrigin(new Ammo.btVector3(0, -0.7, 0)); // Abaisse le sol à Y = -1

@@ -3,6 +3,7 @@
     <nav>
       <router-link to="/">Home</router-link>
       <router-link to="/admin">Admin</router-link>
+      <router-link to="/game">Game</router-link>
       <router-link to="/mobile-experience">Mobile Experience</router-link> <!-- New Link -->
     </nav>
     <router-view></router-view>
