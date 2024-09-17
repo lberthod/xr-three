@@ -40,11 +40,11 @@
   }
   
   .Character_shadow {
-    background: url('../assets/images/shadow.png') no-repeat no-repeat;
+    background: url('../../assets/images/shadow.png') no-repeat no-repeat;
   }
   
   .Character_sprite {
-    background: url('../assets/images/characters.png') no-repeat;
+    background: url('../../assets/images/characters.png') no-repeat;
     width: 16px;
     height: 16px;
   }

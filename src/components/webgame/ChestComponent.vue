@@ -32,7 +32,7 @@
       }
     },
     methods: {
-      openChest2() {
+      openChest() {
         if (!this.isOpened) {
           this.isOpened = true; // Ouvre le coffre
           this.$emit('chestOpened', this.message); // Émet l'événement d'ouverture avec un message
@@ -51,11 +51,11 @@
   }
   
   .chest-closed {
-    background: url('../assets/images/chest-closed.png') no-repeat;
+    background: url('../../assets/images/chest-closed.png') no-repeat;
   }
   
   .chest-open {
-    background: url('../assets/images/chest-open.png') no-repeat;
+    background: url('../../assets/images/chest-open.png') no-repeat;
   }
   </style>
   

@@ -25,9 +25,9 @@ export function getRandomSafeSpot() {
 export function isSolid(x, y) {
   const mapData = {
     minX: 1,
-    maxX: 14,
+    maxX: 140,
     minY: 4,
-    maxY: 12,
+    maxY: 120,
     blockedSpaces: {
       "7x4": true,
       "1x11": true,
