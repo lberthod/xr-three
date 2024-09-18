@@ -1,10 +1,10 @@
 <template>
   <div>
     <nav>
-      <router-link to="/">Home</router-link>
+      <router-link to="/">XR</router-link>
       <router-link to="/admin">Admin</router-link>
-      <router-link to="/game">Game</router-link>
-      <router-link to="/mobile-experience">Mobile Experience</router-link> <!-- New Link -->
+      <router-link to="/web2d">Game 2D</router-link>
+      <router-link to="/web3d">Game 3D</router-link> <!-- New Link -->
     </nav>
     <router-view></router-view>
   </div>

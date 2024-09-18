@@ -2,7 +2,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import XRView from "../views/XRView.vue";
 import AdminView from "../views/AdminView.vue";
-import WebExperience from "../components/WebExperience.vue"; // Import the new MobileExperience component
+import WebExperience from "../views/Web3DView.vue"; // Import the new MobileExperience component
 import GameView from "../views/GameView.vue"; // Import the new MobileExperience component
 
 const routes = [
@@ -17,13 +17,13 @@ const routes = [
     component: AdminView,
   },
   {
-    path: "/game",
-    name: "GameView",
+    path: "/web2d",
+    name: "web2d",
     component: GameView,
   },
   {
-    path: "/mobile-experience", // New route
-    name: "MobileExperience",
+    path: "/web3d", // New route
+    name: "web3d",
     component: WebExperience,
   },
 ];
