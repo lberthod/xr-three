@@ -14,9 +14,9 @@
   <script>
   import * as THREE from 'three';
   import { markRaw } from 'vue';
-  import FlooraComponent from './FlooraComponent.vue';
-  import CubeaComponent from './CubeaComponent.vue';
-  import GrabbableaCube from './GrabbableaCube.vue';
+  import FlooraComponent from './web3d/FlooraComponent.vue';
+  import CubeaComponent from './web3d/CubeaComponent.vue';
+  import GrabbableaCube from './web3d/GrabbableaCube.vue';
   
   export default {
     name: 'WebExperience',

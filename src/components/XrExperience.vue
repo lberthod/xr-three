@@ -43,6 +43,13 @@
 
     <GrabbableCube v-if="scene && renderer" :scene="scene" :renderer="renderer" cubeId="cube1" />
 
+    <ModelComponent 
+      :scene="scene" 
+      modelUrl="/assets/model.gltf"  
+      :position="{ x: 0, y: 0, z: -5 }"
+      :scale="{ x: 0.11, y: 0.1, z: 0.1 }"
+      :rotation="{ x: 0, y: 90, z: 0 }"
+    />
     <!-- Add SphereComponent here
     <SphereComponent v-if="scene && physicsWorld" :scene="scene" :physicsWorld="physicsWorld" /> -->
   </div>
@@ -54,15 +61,16 @@ import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
 import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
+import ModelComponent from './xr/ModelComponent.vue';
 
 import { database, ref, onValue } from '../firebase';
-import CubeComponent from './CubeComponent.vue';
-import Light from './Light.vue';
-import GrabbableCube from './GrabbableCube.vue';
-import TextComponent from './TextComponent.vue';
-import FloorComponent from './FloorComponent.vue'; // Import the FloorComponent
-import SphereComponent from './SphereComponent.vue'; // Import the SphereComponent
-import CubeintoComponent from './CubeintoComponent.vue'; // Import the SphereComponent
+import CubeComponent from './xr/CubeComponent.vue';
+import Light from './xr/Light.vue';
+import GrabbableCube from './xr/GrabbableCube.vue';
+import TextComponent from './xr/TextComponent.vue';
+import FloorComponent from './xr/FloorComponent.vue'; // Import the FloorComponent
+import SphereComponent from './xr/SphereComponent.vue'; // Import the SphereComponent
+import CubeintoComponent from './xr/CubeintoComponent.vue'; // Import the SphereComponent
 
 export default {
   name: 'XrExperience',
@@ -74,6 +82,8 @@ export default {
     FloorComponent,
     SphereComponent, // Register SphereComponent
     CubeintoComponent,
+    ModelComponent,
+
   },
   data() {
     return {
