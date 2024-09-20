@@ -1,6 +1,6 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue, remove, onDisconnect } from 'firebase/database';
+import { getDatabase, ref, set, get, onValue, remove, onDisconnect } from 'firebase/database';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // Configuration Firebase
@@ -20,4 +20,4 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);  // Ensure you pass `app` here for initialization
 
-export { auth, database, ref, set, onValue, remove, onDisconnect, signInAnonymously, onAuthStateChanged };
+export { auth, database, ref, get, set, onValue, remove, onDisconnect, signInAnonymously, onAuthStateChanged };

@@ -198,7 +198,7 @@ export default {
             }
 
             // Sauvegarder la nouvelle position dans Firebase après chaque mouvement
-            this.saveModelDataToFirebase();
+            //this.saveModelDataToFirebase();
 
             // Mettre à jour la position précédente
             this.previousPosition.copy(this.model.position);

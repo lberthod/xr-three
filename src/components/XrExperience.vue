@@ -24,9 +24,14 @@
     <CubeComponent v-for="(cube, id) in cubes" :key="id" :scene="scene" :color="cube.color" :position="cube.position" />
 
 
-
-    <SphereMovementFromGameComponent v-if="sphere" :scene="scene" :renderer="renderer"
-      ref="sphereMovementFromGameComponent" :position="sphere.position || { x: 2, y: 1, z: 2 }" />
+    <SphereMovementFromGameComponent
+      v-if="sphere"
+      :scene="scene"
+      :renderer="renderer"
+      :controllers="controllers"
+      ref="sphereMovementFromGameComponent"
+      :position="sphere.position || { x: 2, y: 1, z: 2 }"
+    />
     <!-- Ajouter une référence au ModelComponent -->
 
 
@@ -81,6 +86,8 @@ export default {
       spheres: {}, // Stocker les sphères
       sphere: null, // Stocker une seule sphère
       sphereId: 'user-specific-id', // Remplacer par l'ID de l'utilisateur actuel
+      score: 0, // État du score
+
     };
   },
   async mounted() {
@@ -108,7 +115,7 @@ export default {
 
     loadCubeFromFirebase() {
       // Charger un seul cube avec un ID spécifique depuis Firebase
-      const cubeRef = ref(database, `positions/ZZeHOyTLC5WGsVwovFhl5L5UpyB2`);
+      const cubeRef = ref(database, `positions/MYRZgmSpc2aQvs7KIxIEqKNlK2x1`);
       onValue(cubeRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -160,7 +167,7 @@ export default {
 
     loadSphereFromFirebase() {
       // Charger une seule sphère avec un ID spécifique depuis Firebase
-      const sphereRef = ref(database, `spheres/ZZeHOyTLC5WGsVwovFhl5L5UpyB2`);
+      const sphereRef = ref(database, `spheres/MYRZgmSpc2aQvs7KIxIEqKNlK2x1`);
       onValue(sphereRef, (snapshot) => {
         const data = snapshot.val();
         console.log(data);
