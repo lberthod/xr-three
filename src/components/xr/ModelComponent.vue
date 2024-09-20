@@ -1,5 +1,5 @@
 <template>
-  <!-- This component doesn't render anything in the DOM -->
+  <!-- Ce composant n'affiche rien dans le DOM -->
 </template>
 
 <script>
@@ -33,19 +33,20 @@ export default {
   },
   data() {
     return {
-      model: null,
       isGrabbed: false,
-      grabber: null,
-      previousPosition: markRaw(new THREE.Vector3()),
-      velocity: markRaw(new THREE.Vector3()),
-      clock: new THREE.Clock(),
-      controllers: [],
+  
     };
   },
   mounted() {
+
+    this.cube = null;
+    this.grabber = null;
+    this.controllers = [];
+    this.previousPosition = new THREE.Vector3();
+    this.velocity = new THREE.Vector3();
+    this.clock = new THREE.Clock();
     this.setupControllers();
     this.loadModel();
-    this.loadModelDataFromFirebase();
     this.animate();
   },
   methods: {
@@ -56,13 +57,13 @@ export default {
       this.scene.add(controller2);
       this.controllers = [controller1, controller2];
 
-      // Add event listeners for controller interactions
+      // Ajouter des écouteurs d'événements pour les interactions du contrôleur
       this.controllers.forEach((controller) => {
         controller.addEventListener('selectstart', this.onSelectStart);
         controller.addEventListener('selectend', this.onSelectEnd);
       });
 
-      // Add controller models for visualization
+      // Ajouter des modèles de contrôleurs pour la visualisation
       const controllerModelFactory = new XRControllerModelFactory();
 
       const controllerGrip1 = this.renderer.xr.getControllerGrip(0);
@@ -73,57 +74,33 @@ export default {
       controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
       this.scene.add(controllerGrip2);
     },
-    async loadModel() {
-      if (!this.modelUrl) {
-        console.error('modelUrl is missing or undefined.');
-        return;
-      }
-
+    loadModel() {
       const loader = new GLTFLoader();
-      loader.load(
-        this.modelUrl,
-        (gltf) => {
-          this.addModelToScene(gltf.scene);
-        },
-        undefined,
-        (error) => {
-          console.error('Error loading GLTF/GLB model:', error);
-        }
-      );
-    },
-    addModelToScene(model) {
-      this.model = markRaw(model);
+      loader.load(this.modelUrl, (gltf) => {
+        this.model = markRaw(gltf.scene);
 
-      // Apply transformations
-      this.model.position.set(this.position.x, this.position.y, this.position.z);
-      this.model.scale.set(this.scale.x, this.scale.y, this.scale.z);
-      this.model.rotation.set(
-        THREE.MathUtils.degToRad(this.rotation.x),
-        THREE.MathUtils.degToRad(this.rotation.y),
-        THREE.MathUtils.degToRad(this.rotation.z)
-      );
+        // Appliquer les transformations initiales
+        this.model.position.set(this.position.x, this.position.y, this.position.z);
+        this.model.scale.set(this.scale.x, this.scale.y, this.scale.z);
+        this.model.rotation.set(
+          THREE.MathUtils.degToRad(this.rotation.x),
+          THREE.MathUtils.degToRad(this.rotation.y),
+          THREE.MathUtils.degToRad(this.rotation.z)
+        );
+        // Ajouter le modèle à la scène
+        this.scene.add(this.model);
 
-      // Enable interaction
-      this.model.traverse((child) => {
-        if (child.isMesh) {
-          child.userData.interactive = true;
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
+        // Initialiser la vélocité
+        this.velocity.set(0, 0, 0);
+
+        // Sauvegarder les données initiales du modèle dans Firebase
+        this.saveModelDataToFirebase();
       });
-
-      this.scene.add(this.model);
-
-      // Initialize velocity
-      this.velocity.set(0, 0, 0);
-
-      // Store initial model properties in Firebase if not already present
-      this.saveModelDataToFirebase();
     },
     onSelectStart(event) {
       const controller = event.target;
 
-      // Check for intersection with the model
+      // Vérifier l'intersection avec le modèle
       const tempMatrix = new THREE.Matrix4();
       tempMatrix.identity().extractRotation(controller.matrixWorld);
 
@@ -137,24 +114,26 @@ export default {
         this.isGrabbed = true;
         this.grabber = controller;
 
-        // Stop model's motion
+        // Arrêter le mouvement du modèle
         this.velocity.set(0, 0, 0);
 
-        // Attach model to controller
+        // Attacher le modèle au contrôleur
         controller.add(this.model);
         this.model.position.set(0, 0, 0);
         this.model.rotation.set(0, 0, 0);
+
+        // Mettre à jour la position précédente
+        //     this.previousPosition.copy(this.model.getWorldPosition(new THREE.Vector3()));
       }
     },
     onSelectEnd(event) {
       if (this.isGrabbed && this.grabber === event.target) {
         this.isGrabbed = false;
 
-        // Detach model from controller
         this.grabber.remove(this.model);
         this.scene.add(this.model);
 
-        // Set the model's world position based on the controller's current position
+        // Set the cube's world position based on the controller's current position
         const newWorldPosition = new THREE.Vector3();
         this.grabber.getWorldPosition(newWorldPosition);
         this.model.position.copy(newWorldPosition);
@@ -165,11 +144,14 @@ export default {
         this.model.getWorldPosition(newPosition);
         this.velocity.copy(newPosition).sub(this.previousPosition).divideScalar(deltaTime);
 
-        // Save model data to Firebase after moving
+
+        // Sauvegarder les données du modèle dans Firebase
         this.saveModelDataToFirebase();
       }
     },
     saveModelDataToFirebase() {
+      if (!this.model) return;
+
       const modelRef = firebaseRef(database, `models/${this.modelId}`);
 
       const modelData = {
@@ -192,48 +174,48 @@ export default {
 
       update(modelRef, modelData);
     },
-    loadModelDataFromFirebase() {
-      const modelRef = firebaseRef(database, `models/${this.modelId}`);
 
-      onValue(modelRef, (snapshot) => {
-        const modelData = snapshot.val();
-        if (modelData && !this.isGrabbed) {
-          this.model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-          this.model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-          this.model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
-        }
-      });
-    },
     animate() {
       this.renderer.setAnimationLoop(() => {
+
         if (this.model) {
           if (!this.isGrabbed) {
-            // Apply gravity
+
+            // Appliquer la gravité
             const deltaTime = this.clock.getDelta();
+
             this.velocity.y -= 9.81 * deltaTime;
 
-            // Update model's position based on velocity
+            // Mettre à jour la position du modèle selon la vélocité
             this.model.position.addScaledVector(this.velocity, deltaTime);
 
-            // Collision with the ground
+            // Gérer la collision avec le sol
             if (this.model.position.y < 0.1) {
-              this.model.position.y = 0.1;
-              this.velocity.y *= -0.5; // Reduce vertical velocity
-              this.velocity.x *= 0.8;  // Reduce horizontal velocity
+              this.model.position.y = 0.1; // Empêcher le modèle de passer sous le sol
+              this.velocity.y *= -0.5; // Réduire la vélocité verticale pour simuler un rebond
+              this.velocity.x *= 0.8;  // Réduire la vélocité horizontale pour ralentir le modèle
               this.velocity.z *= 0.8;
             }
+
+            // Sauvegarder la nouvelle position dans Firebase après chaque mouvement
+            this.saveModelDataToFirebase();
+
+            // Mettre à jour la position précédente
+            this.previousPosition.copy(this.model.position);
           } else {
             // Keep track of the position for velocity calculation
             this.model.getWorldPosition(this.previousPosition);
           }
         }
 
-        this.renderer.render(this.scene, this.camera);
+
+        // Rendre la scène
+        this.renderer.render(this.scene, this.$parent.camera);
       });
     },
   },
   beforeUnmount() {
-    // Clean up event listeners
+    // Nettoyer les écouteurs d'événements
     this.controllers.forEach((controller) => {
       controller.removeEventListener('selectstart', this.onSelectStart);
       controller.removeEventListener('selectend', this.onSelectEnd);
@@ -243,5 +225,5 @@ export default {
 </script>
 
 <style scoped>
-/* No styles needed for this component */
+/* Aucun style nécessaire pour ce composant */
 </style>
