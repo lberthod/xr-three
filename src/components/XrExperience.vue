@@ -19,7 +19,7 @@
       :size="0.251" :color="'#0000ff'" />
     <CubeintoComponent v-if="scene" :scene="scene" :physicsWorld="physicsWorld" />
 
-    <GrabbableCube v-if="scene && renderer" :scene="scene" :renderer="renderer" cubeId="cube1" />
+    <GrabbableCube v-if="scene && renderer" :scene="scene" :renderer="renderer" cubeId="cube1"  @cube-position-updated="onCubePositionUpdated"  />
 
 
     <!-- Add SphereComponent here
@@ -100,6 +100,12 @@ export default {
     // this.characterComponent = this.$refs.characterComponent;
   },
   methods: {
+
+    onCubePositionUpdated(position) {
+        console.log('Position du cube mise à jour :', position);
+        // Vous pouvez maintenant utiliser la position du cube dans le composant parent
+    },
+    
     async initAmmoPhysics() {
       // Charger Ammo.js de manière dynamique
       const Ammo = await import('ammo.js');
