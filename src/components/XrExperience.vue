@@ -115,7 +115,7 @@ export default {
 
     loadCubeFromFirebase() {
       // Charger un seul cube avec un ID spécifique depuis Firebase
-      const cubeRef = ref(database, `positions/MYRZgmSpc2aQvs7KIxIEqKNlK2x1`);
+      const cubeRef = ref(database, `positions/L0wXTXorF7gXxKzk38qwsABXiU32`);
       onValue(cubeRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -167,7 +167,7 @@ export default {
 
     loadSphereFromFirebase() {
       // Charger une seule sphère avec un ID spécifique depuis Firebase
-      const sphereRef = ref(database, `spheres/MYRZgmSpc2aQvs7KIxIEqKNlK2x1`);
+      const sphereRef = ref(database, `spheres/L0wXTXorF7gXxKzk38qwsABXiU32`);
       onValue(sphereRef, (snapshot) => {
         const data = snapshot.val();
         console.log(data);
