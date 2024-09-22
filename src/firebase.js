@@ -5,13 +5,14 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // Configuration Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyB0WpzEQJ-fsjBFF98ovwxwrrYDCwNBX8Q",
-  authDomain: "tete-80d6d.firebaseapp.com",
-  databaseURL: "https://tete-80d6d.firebaseio.com",
-  projectId: "tete-80d6d",
-  storageBucket: "tete-80d6d.appspot.com",
-  messagingSenderId: "1030692630539",
-  appId: "1:1030692630539:web:776838756680c93085570e"
+  apiKey: "AIzaSyB8H8RpZqFWUSI_q_XcPg0RleP_0e05DBQ",
+  authDomain: "moskito-kill.firebaseapp.com",
+  databaseURL: "https://moskito-kill-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "moskito-kill",
+  storageBucket: "moskito-kill.appspot.com",
+  messagingSenderId: "425171266103",
+  appId: "1:425171266103:web:361aa34498ceb59e5d2db2",
+  measurementId: "G-NWQ1KG7NN6"
 };
 
 // Initialisation de Firebase

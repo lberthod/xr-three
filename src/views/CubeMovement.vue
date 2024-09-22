@@ -5,7 +5,7 @@
 <script>
 import * as THREE from "three";
 import { onMounted, onBeforeUnmount } from "vue";
-import {database , ref, set, onValue, auth, signInAnonymously } from "../firebase"; // Importer Firebase
+import { database, ref, set, onValue, auth, signInAnonymously, remove } from "../firebase"; // Importer Firebase
 
 export default {
   name: "CubeMovement",
@@ -19,7 +19,12 @@ export default {
     let cube;
     let userId;
 
-    const createCube = () => {
+    // Fonction pour générer un ID aléatoire
+    const generateRandomId = () => {
+      return Math.random().toString(36).substr(2, 9); // Génère un ID unique
+    };
+
+    const createCube = (cubeId) => {
       // Créer la géométrie et le matériau du cube
       const geometry = new THREE.BoxGeometry(1, 1, 1); // Cube de taille 1x1x1
       const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Cube vert
@@ -29,7 +34,10 @@ export default {
       props.scene.add(cube);
 
       // Écouter les changements de position dans Firebase
-      listenForPositionChanges();
+      listenForPositionChanges(cubeId);
+      
+      // Écouter la destruction du cube dans Firebase
+      listenForDestroy(cubeId);
 
       // Ajouter un gestionnaire d'événements pour déplacer le cube avec les touches du clavier
       document.addEventListener("keydown", onDocumentKeyDown);
@@ -62,7 +70,7 @@ export default {
     };
 
     const updatePositionInFirebase = (position) => {
-      const positionRef = ref(database, `spheres/${userId}`);
+      const positionRef = ref(database, `spheres/${userId}/`); // Utiliser l'ID utilisateur pour référencer l'objet
       set(positionRef, {
         x: position.x,
         y: position.y,
@@ -70,21 +78,43 @@ export default {
       });
     };
 
-    const listenForPositionChanges = () => {
-      const positionRef = ref(database, 'spheres/');
+    const listenForPositionChanges = (cubeId) => {
+      const positionRef = ref(database, `spheres/${cubeId}/`);
       onValue(positionRef, (snapshot) => {
         const positions = snapshot.val();
-        if (positions && positions[userId]) {
+        if (positions) {
           // Mettre à jour la position du cube si la position dans Firebase change
-          cube.position.set(positions[userId].x, positions[userId].y, positions[userId].z);
+          cube.position.set(positions.x, positions.y, positions.z);
         }
       });
+    };
+
+    const listenForDestroy = (cubeId) => {
+      const positionRef = ref(database, `spheres/${cubeId}/`);
+      onValue(positionRef, (snapshot) => {
+        const positions = snapshot.val();
+        if (!positions) {
+          // Si la position est supprimée, prévenir et recréer le cube
+          console.log("Le cube a été supprimé dans Firebase.");
+          recreateCube();
+        }
+      });
+    };
+
+    const recreateCube = () => {
+      if (cube) {
+        props.scene.remove(cube); // Supprimer l'ancien cube
+      }
+      const newCubeId = generateRandomId();
+      userId = newCubeId; // Mettre à jour l'ID utilisateur avec un nouvel ID
+      createCube(newCubeId); // Créer un nouveau cube avec l'ID aléatoire
     };
 
     const signIn = () => {
       signInAnonymously(auth)
         .then((userCredential) => {
           userId = userCredential.user.uid;
+          createCube(userId); // Créer le cube une fois connecté avec l'ID utilisateur Firebase
         })
         .catch((error) => {
           console.error("Firebase sign-in error:", error);
@@ -93,7 +123,6 @@ export default {
 
     onMounted(() => {
       signIn(); // Se connecter anonymement à Firebase avant de créer le cube
-      createCube(); // Créer le cube une fois connecté
     });
 
     onBeforeUnmount(() => {

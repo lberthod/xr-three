@@ -1,39 +1,42 @@
 <template>
-  <!-- The sphere will be added to the scene via ce sub-component -->
+  <!-- La sphère sera ajoutée à la scène via le sous-composant -->
 </template>
 
 <script>
 import * as THREE from 'three';
-import { ref, set, get, database } from '../../firebase'; // Importer Firebase pour gérer le score
+import { ref, set, get, database } from '../../firebase';
 
 export default {
   name: 'SphereMovementFromGameComponent',
-  props: ['scene', 'color', 'position', 'controllers'], // Controllers nécessaires pour détecter les collisions
+  props: ['scene', 'color', 'position', 'controllers', 'idSphere'],
   data() {
     return {
-      isColliding: false,  // Indicateur si le contrôleur est dans la sphère
-      canIncrement: true,  // Indicateur pour permettre la réincrémentation du score
-      hasFirstCollisionHappened: false,  // Nouvel indicateur pour savoir si la première collision a eu lieu
+      isColliding: false,
+      canIncrement: true,
+      hasFirstCollisionHappened: false,
+      sphereBoundingSphere: null,
     };
   },
   mounted() {
-    console.log("Component mounted, sphere is about to be added");
-    this.addSphere();  // Créer la sphère lors du montage du composant
+    console.log(`Sphere with ID ${this.idSphere} mounted`);
+    this.addSphere();
   },
   watch: {
     color(newColor) {
       console.log(`Sphere color changed to ${newColor}`);
-      this.updateSphereColor(newColor);  // Mettre à jour la couleur de la sphère lorsque la prop change
+      this.updateSphereColor(newColor);
     },
     position: {
       handler(newPosition) {
         console.log(`Sphere position changed to x: ${newPosition.x}, y: ${newPosition.y}, z: ${newPosition.z}`);
-        this.updateSpherePosition(newPosition);  // Mettre à jour la position lorsque la prop change
+        this.updateSpherePosition(newPosition);
       },
-      deep: true,  // Surveiller les changements en profondeur pour les objets complexes
+      deep: true,
     }
   },
   methods: {
+
+
     async addSphere() {
       if (!this.scene) {
         console.error("La scène n'est pas disponible");
@@ -41,8 +44,7 @@ export default {
       }
 
       console.log("Adding sphere to the scene");
-      // Créer la géométrie et le matériau pour la sphère
-      const geometry = new THREE.SphereGeometry(1, 32, 32);  // Une sphère avec un rayon de 1 et 32 segments
+      const geometry = new THREE.SphereGeometry(0.1, 32, 32);
       this.material = new THREE.MeshStandardMaterial({ color: this.color });
       this.sphere = new THREE.Mesh(geometry, this.material);
       this.sphere.castShadow = true;
@@ -50,76 +52,107 @@ export default {
 
       if (!this.position) {
         console.warn("No initial position set for the sphere");
-        return;  // Si aucune position n'est définie, on arrête ici
+        return;
       }
 
-      // Position initiale de la sphère
       this.updateSpherePosition(this.position);
-      this.scene.add(this.sphere);  // Ajouter la sphère à la scène
+      this.scene.add(this.sphere);
 
+      this.sphereBoundingSphere = new THREE.Sphere(this.sphere.position, 1);
       console.log("Sphere added, starting collision detection");
-      // Démarrer la détection des collisions
+
       this.checkCollision();
     },
     updateSphereColor(newColor) {
       if (this.sphere) {
-        this.sphere.material.color.set(newColor);  // Mettre à jour la couleur du matériau de la sphère
+        this.sphere.material.color.set(newColor);
         console.log(`Sphere color updated to: ${newColor}`);
       }
     },
     updateSpherePosition(newPosition) {
       if (this.sphere) {
-        // Mettre à jour la position de la sphère avec les nouvelles coordonnées
         this.sphere.position.set(newPosition.x, newPosition.y, newPosition.z);
+        if (this.sphereBoundingSphere) {
+          this.sphereBoundingSphere.center.copy(this.sphere.position);
+        }
         console.log(`Sphere position updated to x: ${newPosition.x}, y: ${newPosition.y}, z: ${newPosition.z}`);
       }
     },
     checkCollision() {
-      // Fonction pour vérifier l'entrée et la sortie de la sphère via la distance
       const check = () => {
-        if (this.controllers && this.controllers.length > 0) {
+        if (this.controllers && this.controllers.length > 0 && this.sphere) {
           this.controllers.forEach(controller => {
             const controllerPosition = new THREE.Vector3();
             controller.getWorldPosition(controllerPosition);
 
-            // Calculer la distance entre le contrôleur et la sphère
-            const distance = controllerPosition.distanceTo(this.sphere.position);
-            console.log(`Distance between controller and sphere: ${distance}`);
+            const sphereRadius = 0.1; // Rayon de la sphère visible
 
-            const isInside = distance < 1;  // Si la distance est inférieure à 1, on considère que le contrôleur est dans la sphère
-            if (isInside && !this.isColliding && this.canIncrement) {
+            // Calculer la distance entre le contrôleur et le centre de la sphère
+            const distance = controllerPosition.distanceTo(this.sphere.position);
+
+            // Vérifier si la distance entre le contrôleur et la surface de la sphère est inférieure ou égale au rayon de la sphère
+            const isColliding = distance <= (sphereRadius * 1.55);
+
+            if (isColliding && !this.isColliding && this.canIncrement) {
               console.log("Controller entered the sphere for the first time");
-              // Si le contrôleur entre dans la sphère pour la première fois
-              this.incrementScore();  // Appeler la fonction d'incrémentation du score
-              this.isColliding = true;  // Verrouiller l'état de collision
-              this.hasFirstCollisionHappened = true;  // Indiquer que la première collision a eu lieu
-              this.canIncrement = false;  // Désactiver la possibilité de réincrémenter
-            } else if (!isInside && this.isColliding) {
+              this.incrementScore();
+              this.isColliding = true;
+              this.hasFirstCollisionHappened = true;
+              this.canIncrement = false;
+            } else if (!isColliding && this.isColliding) {
               console.log("Controller exited the sphere");
-              // Si le contrôleur est sorti de la sphère
-              this.isColliding = false;  // Réinitialiser l'état de collision
-              this.canIncrement = true;  // Réactiver la possibilité d'incrémenter à la prochaine entrée
-              this.hasFirstCollisionHappened = false;  // Réinitialiser la première collision
+              this.isColliding = false;
+              this.canIncrement = true;
+              this.hasFirstCollisionHappened = false;
             }
           });
         }
-        requestAnimationFrame(check);  // Continuer de vérifier les collisions à chaque frame
+        setTimeout(check, 16);
       };
 
-      // Démarrer la vérification des collisions
       check();
     },
     async incrementScore() {
       console.log("Incrementing score");
-      const scoreRef = ref(database, 'game/score');  // Référence vers la base de données Firebase pour le score
-      const snapshot = await get(scoreRef);  // Obtenir la valeur actuelle du score
-      const currentScore = snapshot.val() || 0;  // Si aucun score, initialiser à 0
+      const scoreRef = ref(database, 'game/score');
+      const snapshot = await get(scoreRef);
+      const currentScore = snapshot.val() || 0;
       const newScore = currentScore + 1;
 
-      // Mettre à jour le score dans Firebase
       await set(scoreRef, newScore);
       console.log(`Score updated to: ${newScore}`);
-    }
+
+      // Détruire la sphère après l'incrémentation du score
+      this.destroySphere();
+    },
+    destroySphere() {
+      if (this.sphere) {
+        // Retirer la sphère de la scène
+        this.scene.remove(this.sphere);
+
+        // Libérer la mémoire en supprimant la géométrie et le matériau
+        this.sphere.geometry.dispose();
+        this.sphere.material.dispose();
+
+        // Supprimer les références
+        this.sphere = null;
+        this.sphereBoundingSphere = null;
+        this.removeSphereFromDatabase();
+
+        console.log("Sphere has been destroyed");
+      }
+    },
+    removeSphereFromDatabase() {
+      console.log("delete : " + this.idSphere + " - " + this.sphere);
+      const sphereRef = ref(database, `randoms/${this.idSphere}`);
+      set(sphereRef, null)
+        .then(() => {
+          console.log("Sphere delete  has been removed from Firebase Realtime Database");
+        })
+        .catch((error) => {
+          console.error("Error delete removing sphere from Firebase:", error);
+        });
+    },
   }
 };
 </script>

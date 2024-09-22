@@ -18,23 +18,15 @@
       :size="0.251" :color="'#0000ff'" />
     <GrabbableCube v-if="scene && renderer" :scene="scene" :renderer="renderer" cubeId="cube1"
       @cube-position-updated="onCubePositionUpdated" />
-        <ModelComponent v-if="scene && renderer" :scene="scene" :renderer="renderer" :camera="camera"
+    <ModelComponent v-if="scene && renderer" :scene="scene" :renderer="renderer" :camera="camera"
       modelId="uniqueModelId2" modelUrl="assets/ready.glb" />
 
     <CubeComponent v-for="(cube, id) in cubes" :key="id" :scene="scene" :color="cube.color" :position="cube.position" />
+    <!-- <SphereRandomPlace v-if="scene && renderer" :scene="scene" :controllers="controllers" />-->
 
-
-    <SphereMovementFromGameComponent
-      v-if="sphere"
-      :scene="scene"
-      :renderer="renderer"
-      :controllers="controllers"
-      ref="sphereMovementFromGameComponent"
-      :position="sphere.position || { x: 2, y: 1, z: 2 }"
-    />
-    <!-- Ajouter une référence au ModelComponent -->
-
-
+    <SphereMovementFromGameComponent v-for="(sphere, sphereId) in spheres" :idSphere="sphereId" :scene="scene"
+      :renderer="renderer" :controllers="controllers" ref="sphereMovementFromGameComponent"
+      :position="{ x: sphere.x, y: sphere.y, z: sphere.z } || { x: 2, y: 1, z: 2 }" />
   </div>
 </template>
 
@@ -54,6 +46,7 @@ import FloorComponent from './xr/FloorComponent.vue'; // Import the FloorCompone
 import SphereComponent from './xr/SphereComponent.vue'; // Import the SphereComponent
 import SphereMovementFromGameComponent from './xr/SphereMovementFromGameComponent.vue'; // Import the SphereComponent
 import { database, ref, onValue } from '../firebase';
+import SphereRandomPlace from './xr/SphereRandomPlace.vue'; // Importez le composant SphereRandomPlace
 
 export default {
   name: 'XrExperience',
@@ -68,6 +61,8 @@ export default {
     FloorComponent,
     SphereComponent, // Register SphereComponent
     ModelComponent,
+    SphereRandomPlace, // Ajoutez SphereRandomPlace ici
+
     // ...
   },
   data() {
@@ -92,9 +87,10 @@ export default {
   },
   async mounted() {
     this.clock = new THREE.Clock(); // Initialisation de l'horloge lors du montage
-    this.loadCubeFromFirebase(); // Charger un seul cube depuis Firebase
-    this.loadSphereFromFirebase(); // Charger une seule sphère depuis Firebase
+    //this.loadCubeFromFirebase(); // Charger un seul cube depuis Firebase
+    // this.loadSpheresFromFirebase(); // Charger une seule sphère depuis Firebase
     this.listenForSphereChanges(); // Écouter les changements en temps réel pour les sphères
+   // this.load10RandomSpheres();
 
     await this.initAmmoPhysics(); // Initialiser le monde physique Ammo.js
     this.initScene();
@@ -105,9 +101,79 @@ export default {
   },
   methods: {
 
+    load10RandomSpheres() {
+      this.spheres = {}; // Réinitialiser les sphères existantes
+
+      for (let i = 0; i < 5; i++) {
+        const sphereId = `sphesre_${i + 1}`;
+        const position = this.generateRandomPosition();
+
+        this.spheres[sphereId] = {
+          id: sphereId,
+          position: position,
+        };
+        console.log("dd");
+      }
+
+      console.log('10 sphères aléatoires générées :', this.spheres);
+    },
+
+    /**
+     * Génère une position aléatoire pour une sphère
+     * @returns {Object} Position aléatoire { x, y, z }
+     */
+    generateRandomPosition() {
+      const x = Math.random() * (1.1 - 0.4) + 0.4; // Entre 0.4 et 1.1
+      const y = Math.random() * (1.1 - 0.4) + 0.4; // Entre 0.4 et 1.1
+      const z = Math.random() * (1.1 - 0.4) + 0.4; // Entre 0.4 et 1.1
+      return { x, y, z };
+    },
 
     listenForSphereChanges() {
-      const spheresRef = ref(database, 'spheres');
+      const spheresRef = ref(database, 'randoms');
+      onValue(spheresRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          this.spheres = data; // Mettre à jour toutes les sphères avec les données Firebase
+          console.log('Sphères mises à jour:', this.spheres);
+        }
+      });
+    },
+
+    loadSpheresFromFirebase() {
+      // Référence à la base de données pour récupérer toutes les sphères
+      const spheresRef = ref(database, 'randoms');
+
+      // Écouter les mises à jour en temps réel dans Firebase
+      onValue(spheresRef, (snapshot) => {
+        const data = snapshot.val();
+
+        if (data) {
+          // Mettre à jour le tableau local des sphères avec les données récupérées
+          this.spheres = {};
+
+          Object.keys(data).forEach((sphereId) => {
+            const sphereData = data[sphereId];
+
+            // Vérifier que la sphère a des coordonnées valides
+            if (sphereData && typeof sphereData.x === 'number' && typeof sphereData.y === 'number' && typeof sphereData.z === 'number') {
+              this.spheres[sphereId] = {
+                position: { x: sphereData.x, y: sphereData.y, z: sphereData.z },
+                id: sphereId
+              };
+              console.log(`Sphere ${sphereId} chargée et mise à jour avec succès.`);
+            } else {
+              console.warn(`Sphere ${sphereId} est invalide et sera ignorée.`);
+            }
+          });
+        } else {
+          console.log('Aucune sphère trouvée dans Firebase.');
+        }
+      });
+    },
+
+    listenForSphereChanges() {
+      const spheresRef = ref(database, 'randoms');
       onValue(spheresRef, (snapshot) => {
         this.spheres = snapshot.val() || {}; // Charger toutes les sphères
       });
@@ -165,25 +231,10 @@ export default {
 
 
 
-    loadSphereFromFirebase() {
-      // Charger une seule sphère avec un ID spécifique depuis Firebase
-      const sphereRef = ref(database, `spheres/L0wXTXorF7gXxKzk38qwsABXiU32`);
-      onValue(sphereRef, (snapshot) => {
-        const data = snapshot.val();
-        console.log(data);
-        if (data) {
-          this.sphere = {
-            position: { x: data.x, y: data.y, z: data.z } || { x: 0, y: 0, z: 0 },
-          };
-          console.log(data.x);
-          console.log("add sphere");
-        } else {
-          this.sphere = {
-            position: { x: 0, y: 0, z: 0 },
-          };
-        }
-      });
-    },
+
+
+
+
     onSpherePositionUpdated(position) {
       console.log('Position de la sphère mise à jour :', position);
     },
