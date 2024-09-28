@@ -4,6 +4,7 @@
       <router-link to="/">XR</router-link>
       <router-link to="/admin">Admin</router-link>
       <router-link to="/web2d">Game 2D</router-link>
+      <router-link to="/spherexr">Sphere XR</router-link>
       <router-link to="/game3d">Game game3d</router-link>
       <router-link to="/web3d">Game 3D</router-link> <!-- New Link -->
 

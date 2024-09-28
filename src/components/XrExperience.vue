@@ -21,12 +21,18 @@
     <ModelComponent v-if="scene && renderer" :scene="scene" :renderer="renderer" :camera="camera"
       modelId="uniqueModelId2" modelUrl="assets/ready.glb" />
 
-    <CubeComponent v-for="(cube, id) in cubes" :key="id" :scene="scene" :color="cube.color" :position="cube.position" />
-    <!-- <SphereRandomPlace v-if="scene && renderer" :scene="scene" :controllers="controllers" />-->
-
-    <SphereMovementFromGameComponent v-for="(sphere, sphereId) in spheres" :idSphere="sphereId" :scene="scene"
+    <CubeComponent v-if="scene" v-for="(cube, id) in cubes" :key="id" :scene="scene" :color="cube.color"
+      :position="cube.position" />
+    <ScoreComponent v-if="scene && camera" :scene="scene" :camera="camera" :position="{ x: 0.5, y: 0, z: 2 }"
+      :size="0.55" :color="'#ffff00'" :scoreId="this.userId" />
+ <!-- 
+   <SphereRandomPlace v-if="scene && renderer" :scene="scene" :controllers="controllers" />
+-->    <div v-if="!userId" class="auth-buttons">
+  <button @click="loginWithFacebook">Se connecter avec Facebook</button>
+    </div>
+    <SphereRandom v-if="scene" v-for="(sphere) in spheresRandoms" :scene="scene" :sphereId="sphere.id"
       :renderer="renderer" :controllers="controllers" ref="sphereMovementFromGameComponent"
-      :position="{ x: sphere.x, y: sphere.y, z: sphere.z } || { x: 2, y: 1, z: 2 }" />
+      :position="sphere.position || { x: 2, y: 1, z: 2 }" :scoreId="this.userId"/>
   </div>
 </template>
 
@@ -44,9 +50,11 @@ import GrabbableCube from './xr/GrabbableCube.vue';
 import TextComponent from './xr/TextComponent.vue';
 import FloorComponent from './xr/FloorComponent.vue'; // Import the FloorComponent
 import SphereComponent from './xr/SphereComponent.vue'; // Import the SphereComponent
-import SphereMovementFromGameComponent from './xr/SphereMovementFromGameComponent.vue'; // Import the SphereComponent
-import { database, ref, onValue } from '../firebase';
+import SphereMovementFromGameComponent from './xr/SphereRandom.vue'; // Import the SphereComponent
+import { database, ref, onValue, auth, signInAnonymously, onAuthStateChanged, FacebookAuthProvider, signInWithPopup } from '../firebase';
 import SphereRandomPlace from './xr/SphereRandomPlace.vue'; // Importez le composant SphereRandomPlace
+import SphereRandom from './xr/SphereRandom.vue'; // Importez le composant SphereRandomPlace
+import ScoreComponent from './xr/ScoreComponent.vue'; // Assurez-vous d'importer ScoreComponent
 
 export default {
   name: 'XrExperience',
@@ -59,11 +67,11 @@ export default {
     GrabbableCube,
     TextComponent,
     FloorComponent,
-    SphereComponent, // Register SphereComponent
+    SphereComponent,
     ModelComponent,
-    SphereRandomPlace, // Ajoutez SphereRandomPlace ici
-
-    // ...
+    SphereRandomPlace,
+    SphereRandom,
+    ScoreComponent
   },
   data() {
     return {
@@ -79,6 +87,7 @@ export default {
       cube: null, // Stocker un seul cube
       cubeId: 'user-specific-id', // Remplacer par l'ID de l'utilisateur actuel
       spheres: {}, // Stocker les sphères
+      spheresRandoms: {}, // Stocker les sphères
       sphere: null, // Stocker une seule sphère
       sphereId: 'user-specific-id', // Remplacer par l'ID de l'utilisateur actuel
       score: 0, // État du score
@@ -89,8 +98,10 @@ export default {
     this.clock = new THREE.Clock(); // Initialisation de l'horloge lors du montage
     //this.loadCubeFromFirebase(); // Charger un seul cube depuis Firebase
     // this.loadSpheresFromFirebase(); // Charger une seule sphère depuis Firebase
-    this.listenForSphereChanges(); // Écouter les changements en temps réel pour les sphères
-   // this.load10RandomSpheres();
+    //this.listenForSphereChanges(); // Écouter les changements en temps réel pour les sphères
+    this.load10RandomSpheres();
+  // Authentification anonyme Firebase
+// this.initializeAnonymousLogin();
 
     await this.initAmmoPhysics(); // Initialiser le monde physique Ammo.js
     this.initScene();
@@ -100,22 +111,57 @@ export default {
     // this.characterComponent = this.$refs.characterComponent;
   },
   methods: {
+    initializeAnonymousLogin() {
+      // Vérifier si l'utilisateur est déjà connecté, sinon connecter anonymement
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // Si l'utilisateur est déjà connecté, récupérer son ID
+          this.userId = user.uid;
+          console.log('Utilisateur connecté avec l\'ID:', this.userId);
+        } else {
+          // Si aucun utilisateur, effectuer la connexion anonyme
+          signInAnonymously(auth)
+            .then((userCredential) => {
+              // Connexion réussie, récupérer l'ID de l'utilisateur
+              this.userId = userCredential.user.uid;
+              console.log('Connexion anonyme réussie avec l\'ID:', this.userId);
+            })
+            .catch((error) => {
+              console.error('Erreur lors de la connexion anonyme:', error);
+            });
+        }
+      });
+    },
+
+      
+    async loginWithFacebook() {
+      const provider = new FacebookAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        this.userId = result.user.uid;
+        console.log('Utilisateur connecté via Facebook:', this.userId);
+      } catch (error) {
+        console.error('Erreur de connexion via Facebook:', error);
+      }
+    },
+
+
 
     load10RandomSpheres() {
-      this.spheres = {}; // Réinitialiser les sphères existantes
+      this.spheresRandoms = {}; // Réinitialiser les sphères existantes
 
-      for (let i = 0; i < 5; i++) {
-        const sphereId = `sphesre_${i + 1}`;
+      for (let i = 0; i < 20; i++) {
+        const sphereId = `spherex_${i + 1}`;
         const position = this.generateRandomPosition();
 
-        this.spheres[sphereId] = {
+        this.spheresRandoms[sphereId] = {
           id: sphereId,
           position: position,
         };
         console.log("dd");
       }
 
-      console.log('10 sphères aléatoires générées :', this.spheres);
+      console.log('10 sphères aléatoires générées :', this.spheresRandoms);
     },
 
     /**
@@ -123,9 +169,15 @@ export default {
      * @returns {Object} Position aléatoire { x, y, z }
      */
     generateRandomPosition() {
-      const x = Math.random() * (1.1 - 0.4) + 0.4; // Entre 0.4 et 1.1
-      const y = Math.random() * (1.1 - 0.4) + 0.4; // Entre 0.4 et 1.1
-      const z = Math.random() * (1.1 - 0.4) + 0.4; // Entre 0.4 et 1.1
+      const playerX = 0;
+      const playerY = 0;
+      const playerZ = 0.5;
+      const range = 0.5; // Ajustez cette valeur pour définir la distance autour du joueur
+
+      const x = playerX + (Math.random() * (2 * range) - range); // Entre playerX - range et playerX + range
+      const y = playerY + (Math.random() * (2 * range) - range); // Entre playerY - range et playerY + range
+      const z = playerZ + (Math.random() * (2 * range) - range); // Entre playerZ - range et playerZ + range
+
       return { x, y, z };
     },
 
@@ -134,8 +186,8 @@ export default {
       onValue(spheresRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          this.spheres = data; // Mettre à jour toutes les sphères avec les données Firebase
-          console.log('Sphères mises à jour:', this.spheres);
+          this.spheresRandoms = data; // Mettre à jour toutes les sphères avec les données Firebase
+          console.log('Sphères mises à jour:', this.spheresRandoms);
         }
       });
     },
@@ -150,14 +202,14 @@ export default {
 
         if (data) {
           // Mettre à jour le tableau local des sphères avec les données récupérées
-          this.spheres = {};
+          this.spheresRandoms = {};
 
           Object.keys(data).forEach((sphereId) => {
             const sphereData = data[sphereId];
 
             // Vérifier que la sphère a des coordonnées valides
             if (sphereData && typeof sphereData.x === 'number' && typeof sphereData.y === 'number' && typeof sphereData.z === 'number') {
-              this.spheres[sphereId] = {
+              this.spheresRandoms[sphereId] = {
                 position: { x: sphereData.x, y: sphereData.y, z: sphereData.z },
                 id: sphereId
               };
@@ -175,7 +227,7 @@ export default {
     listenForSphereChanges() {
       const spheresRef = ref(database, 'randoms');
       onValue(spheresRef, (snapshot) => {
-        this.spheres = snapshot.val() || {}; // Charger toutes les sphères
+        this.spheresRandoms = snapshot.val() || {}; // Charger toutes les sphères
       });
     },
 
@@ -275,6 +327,8 @@ export default {
       this.camera.position.set(0, 1.6, 3);
 
       this.renderer = markRaw(new THREE.WebGLRenderer({ antialias: true, alpha: true }));
+      this.renderer.setPixelRatio(window.devicePixelRatio); // S'assurer que le rendu est net sur les écrans haute densité
+
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.xr.enabled = true;  // Activer WebXR pour la scène
       this.renderer.shadowMap.enabled = true;

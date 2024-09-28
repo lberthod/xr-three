@@ -1,7 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get, onValue, remove, onDisconnect , push} from 'firebase/database';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getDatabase, ref, set, get, onValue, remove, onDisconnect , push,runTransaction} from 'firebase/database';
+import { getAuth, signInAnonymously, onAuthStateChanged , FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
 
 // Configuration Firebase
 const firebaseConfig = {
@@ -20,4 +20,4 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);  // Ensure you pass `app` here for initialization
 
-export { auth, database, push, ref, get, set, onValue, remove, onDisconnect, signInAnonymously, onAuthStateChanged };
+export { auth, database, push, ref, get, set, onValue, remove, onDisconnect, signInAnonymously, onAuthStateChanged ,runTransaction, FacebookAuthProvider, signInWithPopup};

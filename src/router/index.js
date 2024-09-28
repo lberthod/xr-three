@@ -5,6 +5,7 @@ import AdminView from "../views/AdminView.vue";
 import WebExperience from "../views/Web3DView.vue"; // Import the new MobileExperience component
 import GameView from "../views/GameView.vue"; // Import the new MobileExperience component
 import Gamed3DView from "../views/Gamed3DView.vue"; // Import the new MobileExperience component
+import SphereXrRandomView from "../views/SphereXrRandomView.vue"; // Import the new MobileExperience component
 
 const routes = [
   {
@@ -31,6 +32,11 @@ const routes = [
     path: "/game3d", // New route
     name: "game3d",
     component: Gamed3DView,
+  },
+  {
+    path: "/spherexr", // New route
+    name: "spherexr",
+    component: SphereXrRandomView,
   },
 ];
 
